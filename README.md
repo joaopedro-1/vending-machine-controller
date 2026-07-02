@@ -23,9 +23,17 @@ Desvio de erro: CHECK_WAIT → ERROR → IDLE
     │   ├── subtractor.sv     # Cálculo de troco
     │   ├── control_unit.sv   # FSM de Moore
     │   └── vending_top.sv    # Top-level
-    └── sim/
-        └── tb_vending.sv     # Testbench — 4 cenários
-
+    ├── sim/
+    │   └── tb_vending.sv     # Testbench — 4 cenários
+    └── synth/
+        ├── synth.tcl         # Script de síntese — Design Compiler
+        ├── vending.sdc       # Constraints de timing (50 MHz)
+        ├── .synopsys_dc.setup # Configuração da biblioteca SAED32
+        └── reports/
+            ├── area.rpt      # Relatório de área
+            ├── timing.rpt    # Relatório de timing e caminho crítico
+            ├── power.rpt     # Relatório de potência
+            └── violations.rpt # Violações de constraints
 
 ## Como simular
 
@@ -36,6 +44,13 @@ vcs -sverilog ../rtl/vending_pkg.sv ../rtl/credit_reg.sv ../rtl/memory.sv \
     ../rtl/vending_top.sv tb_vending.sv && ./simv
 ```
 
+## Como sintetizar
+
+```bash
+cd grupo_NN_vending
+dc_shell -f synth/synth.tcl | tee synth/reports/dc_shell.log
+```
+
 ## Resultado dos testes
 
     PASS: cenario1 dispense         | esperado=1   atual=1
@@ -44,9 +59,18 @@ vcs -sverilog ../rtl/vending_pkg.sv ../rtl/credit_reg.sv ../rtl/memory.sv \
     PASS: cenario3 change_out       | esperado=200 atual=200
     PASS: cenario4 estoque zerado   | esperado=1   atual=1
 
+## Resultados de síntese — SAED32 (50 MHz)
+
+| Métrica | Valor |
+|---------|-------|
+| Área total | 842.96 µm² |
+| Slack (caminho crítico) | 16.25 ns |
+| Potência dinâmica | 21.27 µW |
+| Potência de leakage | 77.08 µW |
+
 ## Tecnologias
 
 - SystemVerilog (IEEE 1800)
 - Synopsys VCS — compilação e simulação
 - Synopsys Verdi — depuração de waveforms
-- Synopsys Design Compiler — síntese lógica
+- Synopsys Design Compiler — síntese lógica com SAED32
