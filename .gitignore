@@ -1,0 +1,20 @@
+# VCS gerados
+simv
+simv.daidir/
+csrc/
+*.vcd
+*.vpd
+*.fsdb
+*.log
+*.rc
+ucli.key
+inter.rpt
+
+# Design Compiler gerados
+synth/reports/
+*.pvl
+*.syn
+*.mr
+*.svf
+default.svf
+command.log
