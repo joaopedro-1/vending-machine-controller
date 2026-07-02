@@ -5,13 +5,18 @@ csrc/
 *.vcd
 *.vpd
 *.fsdb
-*.log
 *.rc
 ucli.key
 inter.rpt
 
 # Design Compiler gerados
-synth/reports/
+alib-52/
+work/
+synth/vending_syn.v
+synth/vending_syn.ddc
+synth/*.ddc
+synth/reports/dc_shell.log
+*.log
 *.pvl
 *.syn
 *.mr
