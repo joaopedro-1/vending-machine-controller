@@ -50,8 +50,3 @@ vcs -sverilog ../rtl/vending_pkg.sv ../rtl/credit_reg.sv ../rtl/memory.sv \
 - Synopsys VCS — compilação e simulação
 - Synopsys Verdi — depuração de waveforms
 - Synopsys Design Compiler — síntese lógica
-
-
-## Autor
-
-João Pedro
