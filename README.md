@@ -14,17 +14,17 @@ Desvio de erro: CHECK_WAIT → ERROR → IDLE
 
 ## Estrutura
 
-grupo_NN_vending/
-├── rtl/
-│   ├── vending_pkg.sv    # Package: tipos e parâmetros
-│   ├── credit_reg.sv     # Registrador de crédito
-│   ├── memory.sv         # Memória 4x16 bits
-│   ├── comparator.sv     # can_sell combinacional
-│   ├── subtractor.sv     # Cálculo de troco
-│   ├── control_unit.sv   # FSM de Moore
-│   └── vending_top.sv    # Top-level
-└── sim/
-└── tb_vending.sv     # Testbench — 4 cenários
+    grupo_NN_vending/
+    ├── rtl/
+    │   ├── vending_pkg.sv    # Package: tipos e parâmetros
+    │   ├── credit_reg.sv     # Registrador de crédito
+    │   ├── memory.sv         # Memória 4x16 bits
+    │   ├── comparator.sv     # can_sell combinacional
+    │   ├── subtractor.sv     # Cálculo de troco
+    │   ├── control_unit.sv   # FSM de Moore
+    │   └── vending_top.sv    # Top-level
+    └── sim/
+        └── tb_vending.sv     # Testbench — 4 cenários
 
 
 ## Como simular
@@ -37,11 +37,19 @@ vcs -sverilog ../rtl/vending_pkg.sv ../rtl/credit_reg.sv ../rtl/memory.sv \
 ```
 
 ## Resultado dos testes
-PASS: cenario1 dispense         | esperado=1   atual=1
-PASS: cenario1 change_out       | esperado=75  atual=75
-PASS: cenario2 error            | esperado=1   atual=1
-PASS: cenario3 change_out       | esperado=200 atual=200
-PASS: cenario4 estoque zerado   | esperado=1   atual=1
+
+    PASS: cenario1 dispense         | esperado=1   atual=1
+    PASS: cenario1 change_out       | esperado=75  atual=75
+    PASS: cenario2 error            | esperado=1   atual=1
+    PASS: cenario3 change_out       | esperado=200 atual=200
+    PASS: cenario4 estoque zerado   | esperado=1   atual=1
+
+## Tecnologias
+
+- SystemVerilog (IEEE 1800)
+- Synopsys VCS — compilação e simulação
+- Synopsys Verdi — depuração de waveforms
+- Synopsys Design Compiler — síntese lógica
 
 
 ## Autor
