@@ -22,4 +22,10 @@ synth/reports/dc_shell.log
 *.mr
 *.svf
 default.svf
-command.log
+command.logAN.DB/
+verdiLog/
+work.lib++/
+novas.conf
+novas.rc
+sx_crash.sx
+sxcmd.log*
