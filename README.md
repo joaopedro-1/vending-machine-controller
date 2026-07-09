@@ -1,72 +1,77 @@
 # Vending Machine Controller — SystemVerilog
 
-Projeto da Residência do CiExpert — Trilha RTL Design.
+Projeto da Residência em Microeletrônica do CI Expert — Trilha RTL Design.
 
 ## Descrição
 
-Controlador digital de uma vending machine com 4 itens implementado em SystemVerilog, integrando FSM de Moore, memória síncrona e datapath separado.
+Controlador digital de uma vending machine com 4 itens (café, água, suco e snack) implementado em SystemVerilog, integrando FSM de Moore, memória síncrona e datapath separado.
 
-## FSM — 7 estados
+## FSM — 6 estados
 
-IDLE → COLLECT → CHECK → CHECK_WAIT → DISPENSE → CHANGE → IDLE
+IDLE → COLLECT → CHECK → DISPENSE → CHANGE → IDLE
 
-Desvio de erro: CHECK_WAIT → ERROR → IDLE
+Desvio de erro: CHECK → ERROR → IDLE (via cancel)
+
+A latência da memória síncrona é tratada internamente no estado CHECK via flag `read_done`, que aguarda 1 ciclo antes de avaliar `can_sell`.
 
 ## Estrutura
 
-    grupo_NN_vending/
+    vending-machine-controller/
     ├── rtl/
     │   ├── vending_pkg.sv    # Package: tipos e parâmetros
-    │   ├── credit_reg.sv     # Registrador de crédito
+    │   ├── credit_reg.sv     # Registrador de crédito (usa current_state)
     │   ├── memory.sv         # Memória 4x16 bits
     │   ├── comparator.sv     # can_sell combinacional
     │   ├── subtractor.sv     # Cálculo de troco
-    │   ├── control_unit.sv   # FSM de Moore
-    │   └── vending_top.sv    # Top-level
+    │   ├── control_unit.sv   # FSM de Moore com read_done
+    │   └── vending_top.sv    # Top-level com change_out registrado
     ├── sim/
     │   └── tb_vending.sv     # Testbench — 4 cenários
     └── synth/
         ├── synth.tcl         # Script de síntese — Design Compiler
         ├── vending.sdc       # Constraints de timing (50 MHz)
-        ├── .synopsys_dc.setup # Configuração da biblioteca SAED32
+        ├── .synopsys_dc.setup
         └── reports/
-            ├── area.rpt      # Relatório de área
-            ├── timing.rpt    # Relatório de timing e caminho crítico
-            ├── power.rpt     # Relatório de potência
-            └── violations.rpt # Violações de constraints
+            ├── area_pos.rpt
+            ├── timing_relatorio.rpt
+            └── power.rpt
 
 ## Como simular
 
 ```bash
-cd sim
-vcs -sverilog ../rtl/vending_pkg.sv ../rtl/credit_reg.sv ../rtl/memory.sv \
-    ../rtl/comparator.sv ../rtl/subtractor.sv ../rtl/control_unit.sv \
-    ../rtl/vending_top.sv tb_vending.sv && ./simv
+source /Tools/synopsys/snps.sh
+make run
 ```
 
 ## Como sintetizar
 
 ```bash
-cd grupo_NN_vending
-dc_shell -f synth/synth.tcl | tee synth/reports/dc_shell.log
+source /Tools/synopsys/snps.sh
+make synth
 ```
 
 ## Resultado dos testes
 
-    PASS: cenario1 dispense         | esperado=1   atual=1
-    PASS: cenario1 change_out       | esperado=75  atual=75
-    PASS: cenario2 error            | esperado=1   atual=1
-    PASS: cenario3 change_out       | esperado=200 atual=200
-    PASS: cenario4 estoque zerado   | esperado=1   atual=1
+    [PASS] Dispense deve disparar          | Esperado: 1,   Obtido: 1
+    [PASS] Troco deve ser 75 centavos      | Esperado: 75,  Obtido: 75
+    [PASS] Credito final deve ser 0        | Esperado: 0,   Obtido: 0
+    [PASS] Sinal de erro deve ser ativado  | Esperado: 1,   Obtido: 1
+    [PASS] FSM deve travar no estado ERROR | Esperado: 5,   Obtido: 5
+    [PASS] FSM deve voltar para IDLE       | Esperado: 0,   Obtido: 0
+    [PASS] FSM deve retornar a IDLE        | Esperado: 0,   Obtido: 0
+    [PASS] Credito deve ser zerado         | Esperado: 0,   Obtido: 0
+    [PASS] Troco devolvido R$2.00          | Esperado: 200, Obtido: 200
+    [PASS] Erro deve disparar por estoque  | Esperado: 1,   Obtido: 1
+    [PASS] FSM deve ir para ERROR          | Esperado: 5,   Obtido: 5
 
 ## Resultados de síntese — SAED32 (50 MHz)
 
 | Métrica | Valor |
 |---------|-------|
-| Área total | 842.96 µm² |
-| Slack (caminho crítico) | 16.25 ns |
-| Potência dinâmica | 21.27 µW |
-| Potência de leakage | 77.08 µW |
+| Área total | 908.76 µm² |
+| Slack (caminho crítico) | 16.34 ns |
+| Caminho crítico | estado_atual_reg → AND3 → dispense |
+| Nenhuma violação de timing |
 
 ## Tecnologias
 
@@ -74,3 +79,9 @@ dc_shell -f synth/synth.tcl | tee synth/reports/dc_shell.log
 - Synopsys VCS — compilação e simulação
 - Synopsys Verdi — depuração de waveforms
 - Synopsys Design Compiler — síntese lógica com SAED32
+
+## Autor
+
+João Pedro — Residente em Microeletrônica
+CI Expert | MCTI / Softex / IRede
+GitHub: [joaopedro-1](https://github.com/joaopedro-1)
