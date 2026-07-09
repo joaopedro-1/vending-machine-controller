@@ -56,25 +56,21 @@ module control_unit (
         // Saída contínua de monitoramento
         state_out = estado_atual;
 
-        // 2. Regra Global de Crédito:
-        // Independentemente do estado da máquina, se uma moeda for
-        // inserida, mandamos o datapath carregar o valor.
-        if (coin_in != 2'b00) begin
-            credit_load = 1'b1;
-        end
-
-        // 3. Comportamento específico de cada estado
+        // 2. Comportamento específico de cada estado
         case (estado_atual)
             
             // Estado 0: Esperando o cliente inserir moeda
             IDLE: begin
                 if (coin_in != 2'b00) begin
+                    credit_load = 1'b1;
                     proximo_estado = COLLECT;
                 end
             end
 
-            // Estado 1: Recebendo moedas e aguardando confirmação
             COLLECT: begin
+                if (coin_in != 2'b00) begin
+                    credit_load = 1'b1;
+                end
                 if (confirm) begin
                     proximo_estado = CHECK;
                 end
