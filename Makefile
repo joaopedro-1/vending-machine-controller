@@ -1,15 +1,18 @@
+SHELL := /bin/bash
+
 # ==========================================
 # Diretórios
 # ==========================================
 RTL_DIR   = rtl
-SIM_DIR   = sim
+TB_DIR    = sim
 SYNTH_DIR = synth
 
 # ==========================================
 # Arquivos
 # ==========================================
+PKG_FILES = $(RTL_DIR)/vending_pkg.sv
+
 RTL_FILES = \
-    $(RTL_DIR)/vending_pkg.sv \
     $(RTL_DIR)/credit_reg.sv \
     $(RTL_DIR)/memory.sv \
     $(RTL_DIR)/comparator.sv \
@@ -17,45 +20,36 @@ RTL_FILES = \
     $(RTL_DIR)/control_unit.sv \
     $(RTL_DIR)/vending_top.sv
 
-TB_FILES = $(SIM_DIR)/tb_vending.sv
+TB_FILES = $(TB_DIR)/tb_vending.sv
+
+TOP = tb_vending
+
+TIMESCALE = 1ns/1ps
+
+VLOGAN_FLAGS = -full64 -sverilog -kdb +lint=all
+VCS_FLAGS    = -full64 -timescale=$(TIMESCALE) -debug_access+all -kdb
 
 # ==========================================
-# Compilação + Simulação
+# Targets
 # ==========================================
 run:
-	cd $(SIM_DIR) && vcs -sverilog \
-		$(addprefix ../, $(RTL_FILES)) \
-		tb_vending.sv && ./simv
+	source /Tools/synopsys/snps.sh && \
+	vlogan $(VLOGAN_FLAGS) $(PKG_FILES) $(RTL_FILES) $(TB_FILES) && \
+	vcs $(VCS_FLAGS) -top $(TOP) && \
+	./simv
 
-# ==========================================
-# Síntese
-# ==========================================
+wave:
+	verdi -ssf vending.vcd &
+
 synth:
+	source /Tools/synopsys/snps.sh && \
 	dc_shell -f $(SYNTH_DIR)/synth.tcl | tee $(SYNTH_DIR)/reports/dc_shell.log
 
-# ==========================================
-# Waveform (Verdi)
-# ==========================================
-wave:
-	verdi -ssf $(SIM_DIR)/vending.fsdb &
-
-# ==========================================
-# Limpeza
-# ==========================================
 clean:
-	rm -rf \
-		$(SIM_DIR)/simv* \
-		$(SIM_DIR)/csrc \
-		$(SIM_DIR)/*.daidir \
-		$(SIM_DIR)/*.vcd \
-		$(SIM_DIR)/*.fsdb \
-		$(SIM_DIR)/ucli.key \
-		alib-52 \
-		work \
-		command.log \
-		default.svf \
-		$(SYNTH_DIR)/reports/*.rpt \
-		$(SYNTH_DIR)/*.ddc \
+	rm -rf csrc simv* *.daidir AN.DB ucli.key \
+		*.vcd *.fsdb *.log novas* verdi* DVEfiles \
+		.vlogan* work alib-52 command.log default.svf \
+		$(SYNTH_DIR)/reports/*.rpt $(SYNTH_DIR)/*.ddc \
 		$(SYNTH_DIR)/*_syn.v
 
-.PHONY: run synth wave clean
+.PHONY: run wave synth clean

@@ -1,0 +1,47 @@
+
+VLOGAN	= vlogan
+VLOGAN_OPT	= -kdb=common_elab -kdb -full64 -sverilog -full64
+
+all :		_VCSgd_dHF3wb_1.db \
+	_VCSgd_gzY6gc_1.db \
+	_VCSgd_vBVHzb_1.db \
+	_VCSgd_ntDAke_1.db \
+	_VCSgd_fAuMld_1.db \
+	_VCSgd_pB4jZb_1.db \
+	_VCSgd_bmIv6b_1.db \
+	_VCSgd_ZBmAid_1.db \
+
+
+
+_VCSgd_dHF3wb_1.db :	rtl/vending_pkg.sv 
+		${VLOGAN}  ${VLOGAN_OPT} rtl/vending_pkg.sv
+
+
+_VCSgd_gzY6gc_1.db :	rtl/credit_reg.sv 
+		${VLOGAN}  ${VLOGAN_OPT} rtl/credit_reg.sv
+
+
+_VCSgd_vBVHzb_1.db :	rtl/memory.sv 
+		${VLOGAN}  ${VLOGAN_OPT} rtl/memory.sv
+
+
+_VCSgd_ntDAke_1.db :	rtl/comparator.sv 
+		${VLOGAN}  ${VLOGAN_OPT} rtl/comparator.sv
+
+
+_VCSgd_fAuMld_1.db :	rtl/subtractor.sv 
+		${VLOGAN}  ${VLOGAN_OPT} rtl/subtractor.sv
+
+
+_VCSgd_pB4jZb_1.db :	rtl/control_unit.sv 
+		${VLOGAN}  ${VLOGAN_OPT} rtl/control_unit.sv
+
+
+_VCSgd_bmIv6b_1.db :	rtl/vending_top.sv 
+		${VLOGAN}  ${VLOGAN_OPT} rtl/vending_top.sv
+
+
+_VCSgd_ZBmAid_1.db :	sim/tb_vending.sv 
+		${VLOGAN}  ${VLOGAN_OPT} sim/tb_vending.sv
+
+

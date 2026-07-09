@@ -1,109 +1,123 @@
-// =============================================================
-// Projeto: Vending Machine Controller
-// Arquivo: control_unit.sv
-// Descricao: FSM de Moore com 7 estados — unidade de controle
-// =============================================================
-import vending_pkg::*;
-
 module control_unit (
     input  logic        clk,
     input  logic        rst,
-    input  logic [1:0]  coin_in,
-    input  logic [1:0]  sel_item,
-    input  logic        confirm,
     input  logic        cancel,
+    input  logic [1:0]  coin_in,
+    input  logic        confirm,
     input  logic        can_sell,
-    input  logic [7:0]  change,
-    input  logic [7:0]  credit,
+    
     output logic        credit_load,
-    output logic        credit_clr,
     output logic        mem_read,
     output logic        mem_write,
     output logic        dispense,
     output logic        error,
-    output logic [7:0]  change_out,
-    output logic [7:0]  display,
-    output logic [2:0]  state_out
+    output logic        change_ena,
+    output vending_pkg::state_t state_out
 );
 
-state_t state, next_state;
+    import vending_pkg::*;
 
-// Bloco sequencial — registra o estado atual
-always_ff @(posedge clk) begin
-    if (rst) begin
-        state <= IDLE;
-    end else begin
-        state <= next_state;
+    // Variáveis internas para rastrear o estado
+    state_t estado_atual, proximo_estado;
+    logic read_done;
+
+    // -------------------------------------------------------------
+    // BLOCO 1: Memória da FSM (Sequencial)
+    // Responsável por atualizar o estado e a flag de leitura na batida do clock.
+    // -------------------------------------------------------------
+    always_ff @(posedge clk) begin
+        if (rst || cancel) begin
+            estado_atual <= IDLE;
+            read_done    <= 1'b0;
+        end else begin
+            estado_atual <= proximo_estado;
+            if (estado_atual == CHECK) begin
+                read_done <= ~read_done;
+            end else begin
+                read_done <= 1'b0;
+            end
+        end
     end
-end
 
-// Bloco combinacional — logica de proximo estado e saidas
-always_comb begin
-    // valores padrao — evita latches
-    next_state  = state;
-    credit_load = 1'b0;
-    credit_clr  = 1'b0;
-    mem_read    = 1'b0;
-    mem_write   = 1'b0;
-    dispense    = 1'b0;
-    error       = 1'b0;
-    change_out  = 8'd0;
-    display     = credit;
-    state_out   = state;
+    // -------------------------------------------------------------
+    // BLOCO 2: Lógica de Decisão (Combinacional)
+    // Analisa as entradas e decide o que a máquina fará a seguir.
+    // -------------------------------------------------------------
+    always_comb begin
+        // 1. Valores padrão de segurança (Evita comportamentos inesperados)
+        proximo_estado = estado_atual;
+        credit_load    = 1'b0;
+        mem_read       = 1'b0;
+        mem_write      = 1'b0;
+        dispense       = 1'b0;
+        error          = 1'b0;
+        change_ena     = 1'b0;
+        
+        // Saída contínua de monitoramento
+        state_out = estado_atual;
 
-    case (state)
-        IDLE: begin
-            if (cancel)
-                next_state = IDLE;
-            else if (coin_in != 2'b00)
-                next_state = COLLECT;
-        end
-
-        COLLECT: begin
+        // 2. Regra Global de Crédito:
+        // Independentemente do estado da máquina, se uma moeda for
+        // inserida, mandamos o datapath carregar o valor.
+        if (coin_in != 2'b00) begin
             credit_load = 1'b1;
-            if (cancel)
-                next_state = IDLE;
-            else if (confirm)
-                next_state = CHECK;
         end
 
-        CHECK: begin
-            mem_read = 1'b1;
-            if (cancel)
-                next_state = IDLE;
-            else
-                next_state = CHECK_WAIT;
-        end
+        // 3. Comportamento específico de cada estado
+        case (estado_atual)
+            
+            // Estado 0: Esperando o cliente inserir moeda
+            IDLE: begin
+                if (coin_in != 2'b00) begin
+                    proximo_estado = COLLECT;
+                end
+            end
 
-        CHECK_WAIT: begin
-            if (cancel)
-                next_state = IDLE;
-            else if (can_sell)
-                next_state = DISPENSE;
-            else
-                next_state = ERROR;
-        end
+            // Estado 1: Recebendo moedas e aguardando confirmação
+            COLLECT: begin
+                if (confirm) begin
+                    proximo_estado = CHECK;
+                end
+            end
 
-        DISPENSE: begin
-            dispense  = 1'b1;
-            mem_write = 1'b1;
-            next_state = CHANGE;
-        end
+            // Estado 2: Dispara o sinal de leitura da RAM e aguarda 1 ciclo
+            CHECK: begin
+                mem_read = 1'b1;
+                if (!read_done) begin
+                    proximo_estado = CHECK;
+                end else begin
+                    if (can_sell) begin
+                        proximo_estado = DISPENSE; // Tem crédito e estoque!
+                    end else begin
+                        proximo_estado = ERROR;    // Falta crédito ou estoque vazio
+                    end
+                end
+            end
 
-        CHANGE: begin
-            change_out = change;
-            credit_clr = 1'b1;
-            next_state = IDLE;
-        end
+            // Estado 4: Libera o produto e debita 1 do estoque na RAM
+            DISPENSE: begin
+                dispense  = 1'b1;
+                mem_write = 1'b1;
+                proximo_estado = CHANGE;
+            end
 
-        ERROR: begin
-            error = 1'b1;
-            if (cancel)
-                next_state = IDLE;
-        end
+            // Estado 5: Sinaliza a devolução do troco e zera o crédito
+            CHANGE: begin
+                credit_load = 1'b1; // Reaproveitamos para zerar o registrador
+                change_ena  = 1'b1; // Libera o troco para a saída
+                proximo_estado = IDLE;
+            end
 
-        default: next_state = IDLE;
-    endcase
-end
+            // Estado 6: Trava a máquina se algo der errado (ex: saldo insuficiente)
+            ERROR: begin
+                error = 1'b1;
+                // O retorno para IDLE é tratado pelo 'cancel' no bloco Sequencial
+            end
+            
+            // Proteção contra falhas no circuito
+            default: proximo_estado = IDLE;
+            
+        endcase
+    end
 
 endmodule

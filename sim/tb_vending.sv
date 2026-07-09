@@ -1,179 +1,142 @@
-// =============================================================
-// Projeto: Vending Machine Controller
-// Arquivo: tb_vending.sv
-// Descricao: Testbench self-checking com 4 cenarios obrigatorios
-// =============================================================
-
 module tb_vending;
+    import vending_pkg::*;
 
-// Sinais
-logic        clk;
-logic        rst;
-logic [1:0]  coin_in;
-logic [1:0]  sel_item;
-logic        confirm;
-logic        cancel;
-logic        dispense;
-logic [7:0]  change_out;
-logic        error;
-logic [7:0]  display;
-logic [2:0]  state_out;
+    logic        clk;
+    logic        rst;
+    logic [1:0]  coin_in;
+    logic [1:0]  sel_item;
+    logic        confirm;
+    logic        cancel;
+    logic        dispense;
+    logic [7:0]  change_out;
+    logic        error;
+    logic [7:0]  display;
+    logic [2:0]  state_out;
 
-// Sinais de captura para verificacao
-logic        dispense_captured;
-logic [7:0]  change_captured;
+    logic        dispense_detected;
+    logic        clear_dispense;
 
-// Instancia do DUT
-vending_top dut (
-    .clk       (clk),
-    .rst       (rst),
-    .coin_in   (coin_in),
-    .sel_item  (sel_item),
-    .confirm   (confirm),
-    .cancel    (cancel),
-    .dispense  (dispense),
-    .change_out(change_out),
-    .error     (error),
-    .display   (display),
-    .state_out (state_out)
-);
+    // Instanciação do módulo principal
+    vending_top uut (.*);
 
-// Captura de sinais para verificacao pos-estado
-always_ff @(posedge clk) begin
-    if (rst) begin
-        dispense_captured <= 0;
-        change_captured   <= 0;
-    end else begin
-        if (dispense)        dispense_captured <= 1;
-        if (change_out != 0) change_captured   <= change_out;
-        if (cancel)          change_captured   <= display;
+    // Latch para ajudar a capturar o pulso combinacional de dispense
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst || clear_dispense) begin
+            dispense_detected <= 0;
+        end else if (dispense) begin
+            dispense_detected <= 1;
+        end
     end
-end
 
-// Geracao de clock — periodo 10ns
-initial clk = 0;
-always #5 clk = ~clk;
+    // Geração do clock (Período de 10ns)
+    always #5 clk = ~clk;
 
-// Geracao de waveform
-initial begin
-    $dumpfile("tb_vending.vcd");
-    $dumpvars(0, tb_vending);
-end
+    // Tarefa: Aplica uma moeda e aguarda 1 ciclo
+    task apply_coin(input logic [1:0] value);
+        begin
+            coin_in = value;
+            @(posedge clk) #1 coin_in = 2'b00;
+        end
+    endtask
 
-// ============================================================
-// Tarefas
-// ============================================================
+    // Tarefa: Reporta PASS/FAIL automaticamente
+    task check(input int expected, input int actual, input string label);
+        begin
+            if (expected === actual) begin
+                $display("[PASS] %s | Esperado: %0d, Obtido: %0d", label, expected, actual);
+            end else begin
+                $display("[FAIL] %s | Esperado: %0d, Obtido: %0d", label, expected, actual);
+            end
+        end
+    endtask
 
-// Verifica e reporta PASS/FAIL
-task check(input logic [7:0] expected, input logic [7:0] actual, input string label);
-    if (expected === actual)
-        $display("PASS: %s | esperado=%0d atual=%0d", label, expected, actual);
-    else
-        $display("FAIL: %s | esperado=%0d atual=%0d", label, expected, actual);
-endtask
+    initial begin
+        // Configuração para geração do arquivo de Waveform (útil para o Verdi/DVE)
+        $dumpfile("vending.vcd");
+        $dumpvars(0, tb_vending);
 
-// Aplica uma moeda e aguarda acumulacao
-task apply_coin(input logic [1:0] value);
-    coin_in = value;
-    @(posedge clk);  // IDLE detecta coin_in
-    @(posedge clk);  // COLLECT acumula
-    coin_in = 2'b00;
-    @(posedge clk);  // coin_in zerado
-endtask
+        // Inicialização de sinais
+        clk = 0;
+        rst = 0;
+        coin_in = 2'b00;
+        sel_item = 2'b00;
+        confirm = 0;
+        cancel = 0;
+        clear_dispense = 0;
 
-// ============================================================
-// Cenarios de teste
-// ============================================================
-initial begin
+        // Reset inicial por 2 ciclos de clock
+        rst = 1;
+        repeat(2) @(posedge clk) begin end
+        #1 rst = 0;
+        @(posedge clk) begin end
 
-    // Reset inicial
-    rst     = 1;
-    coin_in = 2'b00;
-    sel_item = 2'b00;
-    confirm = 0;
-    cancel  = 0;
-    @(posedge clk);
-    @(posedge clk);
-    rst = 0;
+        $display("\n=== CENARIO 1: Compra bem-sucedida com troco (Cafe, R$0.25) ===");
+        clear_dispense = 1;
+        @(posedge clk) #1 clear_dispense = 0;
+        sel_item = 2'b00;  // Seleciona Café (preço: 25)
+        apply_coin(2'b11); // Insere R$1.00 (valor: 100)
+        confirm = 1;
+        @(posedge clk) #1 confirm = 0;
+        
+        // Espera a FSM processar (CHECK -> DISPENSE -> CHANGE -> IDLE)
+        repeat(5) @(posedge clk) begin end
+        check(1, dispense_detected, "Dispense deve disparar");
+        check(75, change_out, "Troco deve ser 75 centavos");
+        check(0, display, "Credito final deve ser 0");
 
-    // ----------------------------------------------------------
-    // Cenario 1 — Compra bem-sucedida com troco
-    // Insere R$1,00, compra cafe (R$0,25), troco = R$0,75
-    // ----------------------------------------------------------
-    sel_item = 2'b00;
-    coin_in  = 2'b11;
-    @(posedge clk);       // IDLE → COLLECT
-    @(posedge clk);       // COLLECT acumula credit=100
-    confirm  = 1;
-    coin_in  = 2'b00;
-    @(posedge clk);       // COLLECT → CHECK
-    confirm  = 0;
-    repeat(5) @(posedge clk);
-    check(8'd1,  dispense_captured, "cenario1 dispense");
-    check(8'd75, change_captured,   "cenario1 change_out");
+        $display("\n=== CENARIO 2: Credito insuficiente (Snack, R$1.00) ===");
+        sel_item = 2'b11;  // Seleciona Snack (preço: 100)
+        apply_coin(2'b01); // Insere R$0.25 (valor: 25)
+        confirm = 1;
+        @(posedge clk) #1 confirm = 0;
+        
+        repeat(4) @(posedge clk) begin end
+        check(1, error, "Sinal de erro deve ser ativado");
+        check(3'b101, state_out, "FSM deve travar no estado ERROR");
+        
+        // Recupera do erro via cancel
+        cancel = 1;
+        @(posedge clk) #1 cancel = 0;
+        repeat(2) @(posedge clk) begin end
+        check(3'b000, state_out, "FSM deve voltar para IDLE apos cancel");
 
-    // Reset entre cenarios
-    rst = 1; @(posedge clk); rst = 0; @(posedge clk);
+        $display("\n=== CENARIO 3: Cancelamento em COLLECT ===");
+        apply_coin(2'b11); // Insere R$1.00
+        apply_coin(2'b11); // Insere R$1.00 (Total R$2.00)
+        cancel = 1;
+        @(posedge clk) #1 cancel = 0;
+        
+        repeat(2) @(posedge clk) begin end
+        check(3'b000, state_out, "FSM deve retornar a IDLE imediatamente");
+        check(0, display, "Credito deve ser zerado");
+        check(200, change_out, "Troco devolvido deve ser R$2.00 (200 centavos)");
 
-    // ----------------------------------------------------------
-    // Cenario 2 — Credito insuficiente
-    // Insere R$0,25, tenta comprar snack (R$1,00)
-    // ----------------------------------------------------------
-    sel_item = 2'b11;
-    @(posedge clk);
-    apply_coin(2'b01);
-    confirm = 1;
-    @(posedge clk);
-    confirm = 0;
-    repeat(5) @(posedge clk);
-    check(8'd1, error, "cenario2 error");
-
-    // Reset entre cenarios
-    rst = 1; @(posedge clk); rst = 0; @(posedge clk);
-
-    // ----------------------------------------------------------
-    // Cenario 3 — Cancelamento
-    // Insere 2x R$1,00 e cancela — troco = R$2,00
-    // ----------------------------------------------------------
-    coin_in = 2'b11;
-    @(posedge clk);       // IDLE → COLLECT
-    @(posedge clk);       // acumula 100
-    @(posedge clk);       // acumula mais 100 = 200
-    @(posedge clk);       // ciclo extra
-    cancel  = 1;
-    @(posedge clk);
-    cancel  = 0;
-    coin_in = 2'b00;
-    repeat(3) @(posedge clk);
-    check(8'd200, change_captured, "cenario3 change_out");
-
-    // Reset entre cenarios
-    rst = 1; @(posedge clk); rst = 0; @(posedge clk);
-
-    // ----------------------------------------------------------
-    // Cenario 4 — Estoque zerado
-    // Compra cafe 5 vezes (estoque=5), na 6a deve dar error
-    // ----------------------------------------------------------
-    sel_item = 2'b00;
-    repeat(5) begin
+        $display("\n=== CENARIO 4: Estoque zerado apos multiplas compras (Cafe) ===");
+        // Já comprámos 1 café no cenário 1, restam 4 no estoque.
+        // Vamos comprar mais 4 vezes para zerar totalmente o estoque de café.
+        for(int i = 0; i < 4; i++) begin
+            sel_item = 2'b00;
+            apply_coin(2'b01); // Insere R$0.25 exato
+            confirm = 1;
+            @(posedge clk) #1 confirm = 0;
+            repeat(5) @(posedge clk) begin end
+        end
+        
+        $display("Tentando a 6a compra de Cafe (Estoque deve estar em 0)...");
+        sel_item = 2'b00;
         apply_coin(2'b01);
         confirm = 1;
-        @(posedge clk);
-        confirm = 0;
-        @(posedge clk);
-        repeat(5) @(posedge clk);
-        rst = 1; @(posedge clk); rst = 0; @(posedge clk);
+        @(posedge clk) #1 confirm = 0;
+        
+        repeat(4) @(posedge clk) begin end
+        check(1, error, "Erro deve disparar por falta de estoque");
+        check(3'b101, state_out, "FSM deve ir para o estado ERROR");
+        
+        // Retorna ao estado normal
+        cancel = 1;
+        @(posedge clk) #1 cancel = 0;
+        
+        $display("\n======= FIM DOS TESTES SIMULADOS =======");
+        $finish;
     end
-
-    // 6a tentativa — estoque zerado
-    apply_coin(2'b01);
-    confirm = 1;
-    @(posedge clk);
-    confirm = 0;
-    repeat(5) @(posedge clk);
-    check(8'd1, error, "cenario4 error estoque zerado");
-
-    $finish;
-end
-
 endmodule
