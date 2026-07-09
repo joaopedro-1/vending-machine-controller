@@ -79,9 +79,3 @@ make synth
 - Synopsys VCS — compilação e simulação
 - Synopsys Verdi — depuração de waveforms
 - Synopsys Design Compiler — síntese lógica com SAED32
-
-## Autor
-
-João Pedro — Residente em Microeletrônica
-CI Expert | MCTI / Softex / IRede
-GitHub: [joaopedro-1](https://github.com/joaopedro-1)
