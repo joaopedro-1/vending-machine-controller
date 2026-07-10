@@ -33,40 +33,6 @@ O sistema permite:
 
 ---
 
-## Arquitetura
-
-```
-                   +------------------+
-                   |  Control Unit    |
-                   |   FSM (Moore)    |
-                   +------------------+
-                      |   |      |
-          credit_load |   | mem_read
-                      |   | mem_write
-                      |   |
-          +-----------+---+------------------+
-          |                                |
-          |          Datapath              |
-          |                                |
-          | +------------+                 |
-coin_in -->| credit_reg |------------------+
-          | +------------+                 |
-          |        |                       |
-          |        | credit                |
-          |        v                       |
-          | +------------+                 |
-          | | comparator |<----- memory ---+
-          | +------------+                 |
-          |        | can_sell              |
-          |        v                       |
-          | +------------+                 |
-          | | subtractor |                 |
-          | +------------+                 |
-          +--------------------------------+
-```
-
----
-
 ## Máquina de Estados
 
 Fluxo principal:
@@ -212,16 +178,3 @@ O caminho crítico identificado pelo Design Compiler está associado ao somador 
 - GNU Make
 
 ---
-
-## Autor
-
-**João Pedro de Lima e Silva**
-
-Residência em Microeletrônica – CI Expert  
-Trilha RTL Design
-
----
-
-## Licença
-
-Projeto desenvolvido para fins acadêmicos como atividade da Residência em Microeletrônica (CI Expert / MCTI / Softex / IRede).
