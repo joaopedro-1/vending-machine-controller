@@ -88,8 +88,8 @@ vending-machine-controller/
 │   ├── reports/
 │   └── netlist/
 │
-└── Makefile
-└── README.md
+├── Makefile
+├── README.md
 └── Relatório_ Vending Machine RTL.pdf
 ```
 
