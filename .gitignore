@@ -29,3 +29,16 @@ novas.conf
 novas.rc
 sx_crash.sx
 sxcmd.log*
+# --- Correcoes e adicoes (atividade Formality) ---
+AN.DB/
+command.log
+sx_crash.sx
+sxcmd.log*
+synth/vending_top_syn.ddc
+
+# Formality gerados
+fm/formality*_svf/
+fm/*.log
+formality*.log
+default.svf
+synth/libs/

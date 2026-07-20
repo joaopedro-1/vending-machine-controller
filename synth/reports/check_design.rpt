@@ -2,32 +2,19 @@
 ****************************************
 check_design summary:
 Version:     X-2025.06-SP2
-Date:        Thu Jul  2 16:20:55 2026
+Date:        Fri Jul 10 10:07:49 2026
 ****************************************
 
                    Name                                            Total
 --------------------------------------------------------------------------------
-Inputs/Outputs                                                     12
-    Unconnected ports (LINT-28)                                     3
-    Feedthrough (LINT-29)                                           8
+Inputs/Outputs                                                      1
     Shorted outputs (LINT-31)                                       1
 
 Cells                                                               2
     Cells do not drive (LINT-1)                                     2
 --------------------------------------------------------------------------------
 
-Warning: In design 'credit_reg', cell 'C81' does not drive any nets. (LINT-1)
+Warning: In design 'credit_reg', cell 'C98' does not drive any nets. (LINT-1)
 Warning: In design 'memory', cell 'B_4' does not drive any nets. (LINT-1)
-Warning: In design 'credit_reg', port 'credit_clr' is not connected to any nets. (LINT-28)
-Warning: In design 'control_unit', port 'sel_item[1]' is not connected to any nets. (LINT-28)
-Warning: In design 'control_unit', port 'sel_item[0]' is not connected to any nets. (LINT-28)
-Warning: In design 'control_unit', input port 'credit[7]' is connected directly to output port 'display[7]'. (LINT-29)
-Warning: In design 'control_unit', input port 'credit[6]' is connected directly to output port 'display[6]'. (LINT-29)
-Warning: In design 'control_unit', input port 'credit[5]' is connected directly to output port 'display[5]'. (LINT-29)
-Warning: In design 'control_unit', input port 'credit[4]' is connected directly to output port 'display[4]'. (LINT-29)
-Warning: In design 'control_unit', input port 'credit[3]' is connected directly to output port 'display[3]'. (LINT-29)
-Warning: In design 'control_unit', input port 'credit[2]' is connected directly to output port 'display[2]'. (LINT-29)
-Warning: In design 'control_unit', input port 'credit[1]' is connected directly to output port 'display[1]'. (LINT-29)
-Warning: In design 'control_unit', input port 'credit[0]' is connected directly to output port 'display[0]'. (LINT-29)
 Warning: In design 'control_unit', output port 'mem_write' is connected directly to output port 'dispense'. (LINT-31)
 1

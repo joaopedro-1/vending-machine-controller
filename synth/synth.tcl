@@ -26,6 +26,10 @@ puts "CHECK DESIGN"
 puts "=================================================="
 redirect synth/reports/check_design.rpt { check_design }
 
+
+
+set_svf synth/reports/default.svf
+
 # Síntese
 puts "=================================================="
 puts "INICIANDO SINTESE"
