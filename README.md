@@ -1,81 +1,182 @@
 # Vending Machine Controller — SystemVerilog
 
-Projeto da Residência em Microeletrônica do CI Expert — Trilha RTL Design.
+Projeto desenvolvido para a **Residência em Microeletrônica – CI Expert**, na trilha **RTL Design**, implementando um controlador digital de uma máquina de vendas (Vending Machine) utilizando **SystemVerilog**.
 
-## Descrição
+---
 
-Controlador digital de uma vending machine com 4 itens (café, água, suco e snack) implementado em SystemVerilog, integrando FSM de Moore, memória síncrona e datapath separado.
+## Visão Geral
 
-## FSM — 6 estados
+O projeto implementa um controlador para uma vending machine com quatro produtos (café, água, suco e snack), utilizando uma arquitetura baseada na separação entre **Unidade de Controle (FSM de Moore)** e **Datapath**.
 
-IDLE → COLLECT → CHECK → DISPENSE → CHANGE → IDLE
+O sistema permite:
 
-Desvio de erro: CHECK → ERROR → IDLE (via cancel)
+- Inserção de moedas
+- Seleção de produto
+- Validação de crédito
+- Controle de estoque
+- Liberação do produto
+- Devolução de troco
+- Cancelamento da operação
 
-A latência da memória síncrona é tratada internamente no estado CHECK via flag `read_done`, que aguarda 1 ciclo antes de avaliar `can_sell`.
+---
 
-## Estrutura
+## Principais Características
 
-    vending-machine-controller/
-    ├── rtl/
-    │   ├── vending_pkg.sv    # Package: tipos e parâmetros
-    │   ├── credit_reg.sv     # Registrador de crédito (usa current_state)
-    │   ├── memory.sv         # Memória 4x16 bits
-    │   ├── comparator.sv     # can_sell combinacional
-    │   ├── subtractor.sv     # Cálculo de troco
-    │   ├── control_unit.sv   # FSM de Moore com read_done
-    │   └── vending_top.sv    # Top-level com change_out registrado
-    ├── sim/
-    │   └── tb_vending.sv     # Testbench — 4 cenários
-    └── synth/
-        ├── synth.tcl         # Script de síntese — Design Compiler
-        ├── vending.sdc       # Constraints de timing (50 MHz)
-        ├── .synopsys_dc.setup
-        └── reports/
-            ├── area_pos.rpt
-            ├── timing_relatorio.rpt
-            └── power.rpt
+- FSM de Moore com 6 estados
+- Separação entre Controle e Datapath
+- Memória síncrona 4 × 16 bits
+- Controle de estoque
+- Cálculo automático de troco
+- Cancelamento da compra
+- Testbench self-checking
+- Síntese lógica utilizando Synopsys Design Compiler
 
-## Como simular
+---
+
+## Máquina de Estados
+
+Fluxo principal:
+
+```
+IDLE
+  ↓
+COLLECT
+  ↓
+CHECK
+  ↓
+DISPENSE
+  ↓
+CHANGE
+  ↓
+IDLE
+```
+
+Fluxo de erro:
+
+```
+CHECK
+  ↓
+ERROR
+  ↓
+IDLE (cancel)
+```
+
+A memória síncrona possui latência de um ciclo, tratada internamente através da flag **read_done**.
+
+---
+
+## Estrutura do Projeto
+
+```
+vending-machine-controller/
+│
+├── rtl/
+│   ├── vending_pkg.sv
+│   ├── credit_reg.sv
+│   ├── memory.sv
+│   ├── comparator.sv
+│   ├── subtractor.sv
+│   ├── control_unit.sv
+│   └── vending_top.sv
+│
+├── sim/
+│   └── tb_vending.sv
+│
+├── synth/
+│   ├── synth.tcl
+│   ├── vending.sdc
+│   ├── reports/
+│   └── netlist/
+│
+├── Makefile
+├── README.md
+└── Relatorio_Vending_Machine_RTL.pdf
+```
+
+---
+
+## Simulação
+
+Carregue o ambiente Synopsys:
 
 ```bash
 source /Tools/synopsys/snps.sh
+```
+
+Execute a simulação:
+
+```bash
 make run
 ```
 
-## Como sintetizar
+---
+
+## Síntese
+
+Execute:
 
 ```bash
-source /Tools/synopsys/snps.sh
 make synth
 ```
 
-## Resultado dos testes
+O script gera automaticamente:
 
-    [PASS] Dispense deve disparar          | Esperado: 1,   Obtido: 1
-    [PASS] Troco deve ser 75 centavos      | Esperado: 75,  Obtido: 75
-    [PASS] Credito final deve ser 0        | Esperado: 0,   Obtido: 0
-    [PASS] Sinal de erro deve ser ativado  | Esperado: 1,   Obtido: 1
-    [PASS] FSM deve travar no estado ERROR | Esperado: 5,   Obtido: 5
-    [PASS] FSM deve voltar para IDLE       | Esperado: 0,   Obtido: 0
-    [PASS] FSM deve retornar a IDLE        | Esperado: 0,   Obtido: 0
-    [PASS] Credito deve ser zerado         | Esperado: 0,   Obtido: 0
-    [PASS] Troco devolvido R$2.00          | Esperado: 200, Obtido: 200
-    [PASS] Erro deve disparar por estoque  | Esperado: 1,   Obtido: 1
-    [PASS] FSM deve ir para ERROR          | Esperado: 5,   Obtido: 5
+- Report de área
+- Report de timing
+- Report de potência
+- Report de constraints
+- Netlist sintetizada
 
-## Resultados de síntese — SAED32 (50 MHz)
+---
 
-| Métrica | Valor |
-|---------|-------|
+## Cenários de Teste
+
+O testbench verifica automaticamente:
+
+- Compra bem-sucedida com troco
+- Crédito insuficiente
+- Cancelamento da operação
+- Estoque esgotado
+
+Exemplo da saída:
+
+```
+[PASS] Dispense deve disparar
+[PASS] Troco deve ser 75 centavos
+[PASS] Crédito final deve ser 0
+[PASS] Sinal de erro deve ser ativado
+[PASS] FSM deve retornar ao IDLE
+[PASS] Troco devolvido = R$2,00
+```
+
+---
+
+## Resultados de Síntese
+
+Biblioteca utilizada:
+
+**SAED32 RVT (tt1p05v25c)**
+
+| Métrica | Resultado |
+|---------|----------:|
+| Frequência de projeto | 50 MHz |
+| Frequência máxima estimada | ≈ 200 MHz |
+| Área de células | 769.04 µm² |
 | Área total | 908.76 µm² |
-| Slack (caminho crítico) | 16.34 ns |
-| Caminho crítico | estado_atual_reg → AND3 → dispense |
-| Nenhuma violação de timing |
+| Slack @50 MHz | +15.60 ns |
+| Violações de setup | Nenhuma |
+| Violações de hold | Nenhuma |
 
-## Tecnologias
+O caminho crítico identificado pelo Design Compiler está associado ao somador do registrador de crédito (`credit_reg`), utilizado durante o estado **COLLECT**.
+
+---
+
+## Ferramentas Utilizadas
 
 - SystemVerilog (IEEE 1800)
-- Synopsys VCS — compilação e simulação
-- Synopsys Verdi — depuração de waveforms
-- Synopsys Design Compiler — síntese lógica com SAED32
+- Synopsys VCS
+- Synopsys WaveView / Verdi
+- Synopsys Design Compiler
+- GNU Make
+
+---
